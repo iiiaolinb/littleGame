@@ -2,50 +2,112 @@ import Foundation
 import UIKit
 
 class ViewModel {
-    var battlefield: Rectangle
+   // var battlefield: Rectangle
     //var animation = Animation()
     var selectedRect = Model(label: UILabel(), xPosition: 0, yPosition: 0, row: 0, column: 0, numberOfUnits: 0)
     var countOfTap = -1
     var isItRight: Bool = false
     
     var gamePlay = GamePlay()
+	
+//	var arrayOfRect = [[Model]]()
+	
+//	var rectWithUnits = [Model]()
+//	var rectWithBarraks = [Model]()
 
-    //private var temporaryVariable: Model?
+    private var temporaryVariable: Model?
+	
+	init() {}
+	
+	func createRect() {
+		var x: Int = 0
+		var y: Int = 0
+		var array = [[Model]]()
+		for horizontal in 0..<5 {
+			var column = [Model]()
+			var randomNumber: Int = 0
+			for vertical in 0..<10 {
+				lazy var label: UILabel = {
+					let frame = CGRect(x: Int(Constant.SizeAndPoint.startPoint.x) + x,
+									   y: Int(Constant.SizeAndPoint.startPoint.y) + y,
+									   width: Constant.SizeAndPoint.rectSide,
+									   height: Constant.SizeAndPoint.rectSide)
+					let label = UILabel(frame: frame)
+					label.backgroundColor = Constant.ColorOfEntities.neutrals
+					label.layer.borderWidth = 2
+					label.textAlignment = .center
+					label.numberOfLines = 0
+					randomNumber = Int.random(in: 1...10)
+					label.text = "\(randomNumber)"
+					return label
+				}()
+				column.append(Model(label: label,
+											xPosition: x,
+											yPosition: y,
+											row: horizontal,
+											column: vertical,
+											numberOfUnits: randomNumber))
+				y += Constant.SizeAndPoint.rectSide
+			}
+			array.append(column)
+			column.removeAll()
+			x += Constant.SizeAndPoint.rectSide
+			y = 0
+		}
+			gamePlay.arrayOfRect = array
+	}
+	
+//	func drowRect(inView view: UIViewController) {
+//		createRect()
+//		
+//		arrayOfRect.forEach { labels in
+//			labels.forEach { label in
+//				view.view.addSubview(label.label)
+//			}
+//		}
+//		view.view.addSubview(floor)
+//	}
+	
+	func pickUpCoordinates(ofRect rect: Model) -> (Int, Int){
+		let coord = (rect.xPosition, rect.yPosition)
+		return coord
+	}
     
-    init(wthView view: UIViewController) {
-        battlefield = Rectangle(withView: view)
-    }
-    
-    func startTapOnRect(row: Int, column: Int) {
+	func startTapOnRect(_ selectedRect: Model) {
+		
+		self.selectedRect = selectedRect
+		//gamePlay.rectWithUnits.append(selectedRect)
+		countOfTap += 1
+		
         UIView.animate(withDuration: 0,
                        delay: 0,
                        options: [.curveEaseIn , .allowUserInteraction],
                        animations: {
-            self.battlefield.arrayOfRect[row][column].numberOfUnits = 10 - self.battlefield.arrayOfRect[row][column].numberOfUnits
-            self.battlefield.arrayOfRect[row][column].label.text = String(self.battlefield.arrayOfRect[row][column].numberOfUnits)
-            self.gamePlay.addCircle(row: row, column: column)
-            self.gamePlay.rectWithUnits.append(self.battlefield.arrayOfRect[row][column])
+			self.gamePlay.arrayOfRect[selectedRect.row][selectedRect.column].numberOfUnits = 10 - self.gamePlay.arrayOfRect[selectedRect.row][selectedRect.column].numberOfUnits
+			self.gamePlay.arrayOfRect[selectedRect.row][selectedRect.column].label.text = String(self.gamePlay.arrayOfRect[selectedRect.row][selectedRect.column].numberOfUnits)
+			self.gamePlay.addCircle(self.selectedRect)
+			self.gamePlay.rectWithUnits.append(self.gamePlay.arrayOfRect[selectedRect.row][selectedRect.column])
         },
                        completion: { _ in
-            self.battlefield.arrayOfRect[row][column].isItTapped = true
+			self.gamePlay.arrayOfRect[selectedRect.row][selectedRect.column].isItTapped = true
         })
     }
     
-    func firstTapOnRect(row: Int, column: Int) {
+	func firstTapOnRect(row: Int, column: Int, floor: UILabel) {
         UIView.animate(withDuration: 0,
                        delay: 0,
                        options: [.curveEaseIn , .allowUserInteraction],
                        animations: {
-            self.gamePlay.selectRect(row: row, column: column)
-            self.gamePlay.addRedArrows(row: row, column: column)
+			self.gamePlay.selectRect(self.selectedRect)
+            self.gamePlay.addRedArrows(row: row, column: column, floor: floor)
         },
                        completion: { _ in
-            self.battlefield.arrayOfRect[row][column].isItTapped = true
-            self.temporaryVariable = self.battlefield.arrayOfRect[row][column]
+            self.gamePlay.arrayOfRect[row][column].isItTapped = true
+            self.temporaryVariable = self.gamePlay.arrayOfRect[row][column]
         })
     }
     
-    func secondTapOnRect(row: Int, column: Int) {
+	func secondTapOnRect(row: Int, column: Int, floor: UILabel) {
         let rect = self.temporaryVariable ?? Model(label: UILabel(), xPosition: 0, yPosition: 0, row: 0, column: 0, numberOfUnits: 0)
         UIView.animate(withDuration: 0,
                        delay: 0,
@@ -53,28 +115,28 @@ class ViewModel {
                        animations: {
             
             //go to new area
-            if !(self.battlefield.arrayOfRect[row][column].isItTapped) && (self.battlefield.arrayOfRect[row][column].numberOfUnits <= rect.numberOfUnits) {
+            if !(self.gamePlay.arrayOfRect[row][column].isItTapped) && (self.gamePlay.arrayOfRect[row][column].numberOfUnits <= rect.numberOfUnits) {
                 print("1 - units go to new rect")
-                self.gamePlay.addCircle(row: row, column: column)
-                self.battlefield.arrayOfRect[row][column].numberOfUnits = rect.numberOfUnits - self.battlefield.arrayOfRect[row][column].numberOfUnits
-                self.battlefield.arrayOfRect[row][column].label.text = String(self.battlefield.arrayOfRect[row][column].numberOfUnits)
-                self.battlefield.arrayOfRect[rect.row][rect.column].numberOfUnits = 0
-                self.battlefield.arrayOfRect[rect.row][rect.column].label.text = "0"
-                self.battlefield.arrayOfRect[row][column].isItTapped = true
+				self.gamePlay.addCircle(self.selectedRect)
+                self.gamePlay.arrayOfRect[row][column].numberOfUnits = rect.numberOfUnits - self.gamePlay.arrayOfRect[row][column].numberOfUnits
+                self.gamePlay.arrayOfRect[row][column].label.text = String(self.gamePlay.arrayOfRect[row][column].numberOfUnits)
+                self.gamePlay.arrayOfRect[rect.row][rect.column].numberOfUnits = 0
+                self.gamePlay.arrayOfRect[rect.row][rect.column].label.text = "0"
+                self.gamePlay.arrayOfRect[row][column].isItTapped = true
             //wrong choise (you are too tiny)
-            } else if !(self.battlefield.arrayOfRect[row][column].isItTapped) && (self.battlefield.arrayOfRect[row][column].numberOfUnits > rect.numberOfUnits) {
-                print("2 - to many units for this step")
-                self.wrongChoise(row: row, column: column)
+            } else if !(self.gamePlay.arrayOfRect[row][column].isItTapped) && (self.gamePlay.arrayOfRect[row][column].numberOfUnits > rect.numberOfUnits) {
+                print("2 - too many units for this step")
+                self.wrongChoise(floor)
             //tap on the same rect
             } else if ((row == rect.row) && (column == rect.column)) {
-                self.clearArea(self.battlefield.arrayOfRect[row][column])
+				self.clearArea(self.gamePlay.arrayOfRect[row][column])
             //go to area with alias
             } else {
                 print("3 - units go to alies rect")
-                self.battlefield.arrayOfRect[row][column].numberOfUnits = rect.numberOfUnits + self.battlefield.arrayOfRect[row][column].numberOfUnits
-                self.battlefield.arrayOfRect[row][column].label.text = String(self.battlefield.arrayOfRect[row][column].numberOfUnits)
-                self.battlefield.arrayOfRect[rect.row][rect.column].numberOfUnits = 0
-                self.battlefield.arrayOfRect[rect.row][rect.column].label.text = "0"
+                self.gamePlay.arrayOfRect[row][column].numberOfUnits = rect.numberOfUnits + self.gamePlay.arrayOfRect[row][column].numberOfUnits
+                self.gamePlay.arrayOfRect[row][column].label.text = String(self.gamePlay.arrayOfRect[row][column].numberOfUnits)
+                self.gamePlay.arrayOfRect[rect.row][rect.column].numberOfUnits = 0
+                self.gamePlay.arrayOfRect[rect.row][rect.column].label.text = "0"
             }
         },
                        completion: { _ in
@@ -93,23 +155,28 @@ class ViewModel {
                        completion: nil)
     }
     
+	func canUpgrade(row: Int, column: Int) -> Bool {
+		gamePlay.arrayOfRect[row][column].numberOfUnits >= gamePlay.arrayOfRect[row][column].costOfUpgrade ? true : false
+	}
+	
     func upgrade(row: Int, column: Int) {
-        if battlefield.arrayOfRect[row][column].numberOfUnits >= battlefield.arrayOfRect[row][column].costOfUpgrade {
+//        if arrayOfRect[row][column].numberOfUnits >= arrayOfRect[row][column].costOfUpgrade {
             gamePlay.upgrade(row: row, column: column)
+		
             UIView.animate(withDuration: 0,
                            delay: 0,
                            options: [.curveEaseIn , .allowUserInteraction],
                            animations: {
-                self.battlefield.arrayOfRect[row][column].label.alpha += 0.1
+                self.gamePlay.arrayOfRect[row][column].label.alpha += 0.1
             },
                            completion: nil)
-        } else {
-            wrongChoise(row: row, column: column)
-        }
+//        } else {
+//            wrongChoise()
+//        }
         
     }
     
-    func wrongChoise(row: Int, column: Int) {
+	func wrongChoise(_ floor: UILabel) {
         let text = UILabel(frame: CGRect(x: 50, y: 100, width: 100, height: 50))
         text.textColor = .red
         //text.text = "wrong tap"
@@ -117,9 +184,8 @@ class ViewModel {
                        delay: 0,
                        options: [.allowUserInteraction],
                        animations: {
-            self.battlefield.floor.addSubview(text)
-            self.battlefield.floor.backgroundColor = .red
-            //battlefield.arrayOfRect[row][column].label.backgroundColor = .red
+            floor.addSubview(text)
+            floor.backgroundColor = .red
         },
                        completion: { _ in
             UIView.animate(withDuration: 0.5,
@@ -127,8 +193,7 @@ class ViewModel {
                            options: [.allowUserInteraction],
                            animations: {
                 text.removeFromSuperview()
-                self.battlefield.floor.backgroundColor = .clear
-                //battlefield.arrayOfRect[row][column].label.backgroundColor = Constant.ColorOfEntities.neutrals
+                floor.backgroundColor = .clear
             },
                            completion: nil
         )})

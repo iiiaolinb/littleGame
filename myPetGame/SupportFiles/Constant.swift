@@ -8,6 +8,11 @@
 import UIKit
 
 enum Constant {
+	enum SizeAndPoint {
+		static var rectSide = Int(UIScreen.main.bounds.size.height - 200) / 10
+		static var startPoint = CGPoint(x: (Int(UIScreen.main.bounds.size.width) - rectSide * 5) / 2, y: 100)
+	}
+	
     enum Font {
         static var rectText: UIFont {
             UIFont.systemFont(ofSize: 11, weight: .regular)

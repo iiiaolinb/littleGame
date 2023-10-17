@@ -1,14 +1,9 @@
 import UIKit
+import SnapKit
 
 class ViewController: UIViewController {
     
-    var viewModel: ViewModel
-    
-//    var viewModel.battlefield = Rectangle()
-//    var animation = Animation()
-//    var selectedRect = Model(label: UILabel(), xPosition: 0, yPosition: 0, row: 0, column: 0, numberOfUnits: 0)
-//    var countOfTap = -1
-//    var isItRight: Bool = false
+    var viewModel = ViewModel()
     
     lazy var labelVariantsOfMoves: UILabel = {
         let label = UILabel()
@@ -53,14 +48,16 @@ class ViewController: UIViewController {
         stack.addArrangedSubview(nextStepButton)
         return stack
     }()
-    
-    init() {
-        super.init()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+	
+	lazy var floor: UILabel = {
+		var floor = UILabel(frame: CGRect(x: Int(Constant.SizeAndPoint.startPoint.x),
+										  y: Int(Constant.SizeAndPoint.startPoint.y),
+										  width: Constant.SizeAndPoint.rectSide * 5,
+										  height: Constant.SizeAndPoint.rectSide * 10))
+		floor.backgroundColor = .clear
+		floor.alpha = 1
+		return floor
+	}()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -78,10 +75,21 @@ class ViewController: UIViewController {
         
         view.backgroundColor = .systemBrown
         
-        viewModel.battlefield.drowRect(inView: self)
+        drowRect()
         
         setupConstraints()
     }
+	
+	func drowRect() {
+		viewModel.createRect()
+		
+		viewModel.gamePlay.arrayOfRect.forEach { labels in
+			labels.forEach { label in
+				view.addSubview(label.label)
+			}
+		}
+		view.addSubview(floor)
+	}
 }
 
 extension ViewController {
@@ -95,7 +103,7 @@ extension ViewController {
         viewModel.gamePlay.variantsOfMoves = 1
         viewModel.gamePlay.countOfUnits = 10
         viewModel.clearButtlefield()
-        viewModel.battlefield.drowRect(inView: self)
+        drowRect()
     }
     
     @objc func onNextStepButton() {
@@ -137,16 +145,12 @@ extension ViewController {
         
         for row in 0..<5 {
             for column in 0..<10 {
-                let selectedRect = viewModel.battlefield.arrayOfRect[row][column]
+                let selectedRect = viewModel.gamePlay.arrayOfRect[row][column]
                 let tapLocation = gesture.location(in: selectedRect.label.superview)
                 if (selectedRect.label.layer.presentation()?.frame.contains(tapLocation))! {
-                    viewModel.selectedRect = selectedRect
-                    viewModel.gamePlay.rectWithUnits.append(viewModel.selectedRect)
-                    viewModel.startTapOnRect(row: row, column: column)
-                    viewModel.countOfTap += 1
+                    viewModel.startTapOnRect(selectedRect)
                     modifyTheNumberOfVariantsOfMoves()
                     modifyTheNumberOfCountOfUnits(selectedRect)
-                    
                     print("APPENDING - ", selectedRect.numberOfUnits)
                 }
             }
@@ -158,11 +162,11 @@ extension ViewController {
     func firstTapOnRect(gesture: UIGestureRecognizer) {
         for row in 0..<5 {
             for column in 0..<10 {
-                let selectedRect = viewModel.battlefield.arrayOfRect[row][column]
+                let selectedRect = viewModel.gamePlay.arrayOfRect[row][column]
                 let tapLocation = gesture.location(in: selectedRect.label.superview)
                 if (selectedRect.numberOfUnits > 0) && (viewModel.gamePlay.rectWithUnits.contains(selectedRect)) && (selectedRect.label.layer.presentation()?.frame.contains(tapLocation))! {
                     viewModel.selectedRect = selectedRect
-                    viewModel.firstTapOnRect(row: row, column: column)
+                    viewModel.firstTapOnRect(row: row, column: column, floor: floor)
                     viewModel.countOfTap += 1
                 }
             }
@@ -176,43 +180,43 @@ extension ViewController {
         
         switch (selectedRow, selectedColumn) {
         case (0, 0):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn + 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow + 1][selectedColumn]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn + 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow + 1][selectedColumn]]
         case (0, 9):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn - 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow + 1][selectedColumn]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn - 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow + 1][selectedColumn]]
         case (4, 0):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn + 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow - 1][selectedColumn]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn + 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow - 1][selectedColumn]]
         case (4, 9):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn - 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow - 1][selectedColumn]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn - 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow - 1][selectedColumn]]
         case (1...3, 0):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn + 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow - 1][selectedColumn],
-                         viewModel.battlefield.arrayOfRect[selectedRow + 1][selectedColumn]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn + 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow - 1][selectedColumn],
+                         viewModel.gamePlay.arrayOfRect[selectedRow + 1][selectedColumn]]
         case (1...3, 9):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn - 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow - 1][selectedColumn],
-                         viewModel.battlefield.arrayOfRect[selectedRow + 1][selectedColumn]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn - 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow - 1][selectedColumn],
+                         viewModel.gamePlay.arrayOfRect[selectedRow + 1][selectedColumn]]
         case (0, 1...8):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn + 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn - 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow + 1][selectedColumn]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn + 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn - 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow + 1][selectedColumn]]
         case (4, 1...8):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn + 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow - 1][selectedColumn],
-                         viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn - 1]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn + 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow - 1][selectedColumn],
+                         viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn - 1]]
         case (1...3, 1...8):
-            choiseArr = [viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn + 1],
-                         viewModel.battlefield.arrayOfRect[selectedRow - 1][selectedColumn],
-                         viewModel.battlefield.arrayOfRect[selectedRow + 1][selectedColumn],
-                         viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn - 1]]
+            choiseArr = [viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn + 1],
+                         viewModel.gamePlay.arrayOfRect[selectedRow - 1][selectedColumn],
+                         viewModel.gamePlay.arrayOfRect[selectedRow + 1][selectedColumn],
+                         viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn - 1]]
         default:
             print("invalid")
             break
         }
-        choiseArr.append(viewModel.battlefield.arrayOfRect[selectedRow][selectedColumn])
+        choiseArr.append(viewModel.gamePlay.arrayOfRect[selectedRow][selectedColumn])
         
         for choise in choiseArr {
             let selectedRect = choise
@@ -226,14 +230,14 @@ extension ViewController {
             } else if (selectedRect.label.layer.presentation()?.frame.contains(tapLocation))! &&
                 ((viewModel.gamePlay.rectWithUnits.contains(selectedRect)) ||
                  (viewModel.gamePlay.rectWithBarraks.contains(selectedRect))) {
-                viewModel.secondTapOnRect(row: selectedRect.row, column: selectedRect.column)
+                viewModel.secondTapOnRect(row: selectedRect.row, column: selectedRect.column, floor: floor)
                 viewModel.countOfTap = 0
                 viewModel.isItRight = true
                 modifyTheNumberOfVariantsOfMoves()
             // для перехода на нейтральную ячейку
             } else if (selectedRect.label.layer.presentation()?.frame.contains(tapLocation))! && (viewModel.selectedRect.numberOfUnits >= selectedRect.numberOfUnits) {
                 viewModel.gamePlay.rectWithUnits.append(selectedRect)
-                viewModel.secondTapOnRect(row: selectedRect.row, column: selectedRect.column)
+                viewModel.secondTapOnRect(row: selectedRect.row, column: selectedRect.column, floor: floor)
                 viewModel.countOfTap = 0
                 viewModel.isItRight = true
                 modifyTheNumberOfVariantsOfMoves()
@@ -248,7 +252,11 @@ extension ViewController {
     
     func upgrade(rect: Model) {
         view.alpha = 1
-        viewModel.upgrade(row: rect.row, column: rect.column)
+		if viewModel.canUpgrade(row: rect.row, column: rect.column) {
+			viewModel.upgrade(row: rect.row, column: rect.column)
+		} else {
+			viewModel.wrongChoise(floor)
+		}
         modifyTheNumberOfVariantsOfMoves()
         modifyTheNumberOfCountOfUnits(rect)
     }
@@ -266,7 +274,7 @@ extension ViewController {
     private func checkAndUpgrade(_ gesture: UIGestureRecognizer) {
         for row in 0..<5 {
             for column in 0..<10 {
-                let selectedRect = viewModel.battlefield.arrayOfRect[row][column]
+				let selectedRect = viewModel.gamePlay.arrayOfRect[row][column]
                 let tapLocation = gesture.location(in: selectedRect.label.superview)
                 if (viewModel.gamePlay.rectWithUnits.contains(selectedRect)) && (selectedRect.label.layer.presentation()?.frame.contains(tapLocation))! {
                     selectedRect.numberOfUnits >= selectedRect.costOfUpgrade ? upgrade(rect: selectedRect) : nil
